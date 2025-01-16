@@ -1,0 +1,26 @@
+{
+  "name": "arbi-service",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.ts",
+    "dev": "nodemon index.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@fastify/type-provider-json-schema-to-ts": "^5.0.0",
+    "fastify": "^5.2.1",
+    "pg": "^8.13.1",
+    "reflect-metadata": "^0.2.2",
+    "ts-node": "^10.9.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "nodemon": "^3.1.9",
+    "prettier": "^3.4.2",
+    "typeorm": "^0.3.20",
+    "typescript": "^5.7.3"
+  }
+}
