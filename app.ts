@@ -9,7 +9,6 @@ export async function buildApp() {
   app.register(botRoutes, { prefix: "/api" });
 
   app.addHook("onRequest", async (request, reply) => {
-    // Пример: авторизация, логирование и т. д.
     console.log("request", request);
   });
 
