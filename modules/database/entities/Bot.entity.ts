@@ -11,18 +11,22 @@ export class Bot {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ unique: true })
-  name!: string;
+  @Column({ type: "varchar", length: 255 })
+  name: string;
 
-  @Column({ nullable: true })
-  description?: string;
+  @Column({
+    type: "enum",
+    enum: ["active", "stopped", "paused"],
+    default: "stopped",
+  })
+  status: "active" | "stopped" | "paused";
 
-  @Column({ default: false })
-  isActive: boolean = false;
+  @Column({ type: "jsonb" })
+  config: object;
 
   @CreateDateColumn()
-  createdAt!: Date;
+  created_at: Date;
 
   @UpdateDateColumn()
-  updatedAt!: Date;
+  updated_at: Date;
 }

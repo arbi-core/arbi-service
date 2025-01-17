@@ -5,11 +5,11 @@ import { connectToDatabase } from "./modules/database/db";
 export async function buildApp() {
   const app = fastify();
 
-   await connectToDatabase();
+  await connectToDatabase();
   app.register(botRoutes, { prefix: "/api" });
 
   app.addHook("onRequest", async (request, reply) => {
-    console.log("request", request);
+    // console.log("request", request);
   });
 
   return app;

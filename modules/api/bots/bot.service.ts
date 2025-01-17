@@ -7,9 +7,10 @@ export class BotService {
   async createBot(data: CreateBotType): Promise<Bot> {
     const newBot: Bot = {
       id: String(this.bots.length + 1),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      isActive: false,
+      created_at: new Date(),
+      updated_at: new Date(),
+      status: "stopped",
+      config: {},
       ...data,
     };
     this.bots.push(newBot);
