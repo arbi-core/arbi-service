@@ -1,43 +1,36 @@
 import { CreateBotType, UpdateBotType } from "./bot.schema";
 import { Bot } from "../../database/entities/Bot.entity";
+import { BotRepository } from "../../database/repository/Bot.repository";
 
 export class BotService {
-  private bots: Bot[] = [];
+  private botRepository: BotRepository;
+
+  constructor() {
+    this.botRepository = new BotRepository();
+  }
 
   async createBot(data: CreateBotType): Promise<Bot> {
-    const newBot: Bot = {
-      id: String(this.bots.length + 1),
-      created_at: new Date(),
-      updated_at: new Date(),
+    const botData: Partial<Bot> = {
+      ...data,
       status: "stopped",
       config: {},
-      ...data,
     };
-    this.bots.push(newBot);
-    return newBot;
+    return await this.botRepository.createBot(botData);
   }
 
   async getAllBots(): Promise<Bot[]> {
-    return this.bots;
+    return await this.botRepository.getAllBots();
   }
 
   async getBotById(id: string): Promise<Bot | null> {
-    return this.bots.find((bot) => bot.id === id) || null;
+    return await this.botRepository.getBotById(id);
   }
 
   async updateBot(id: string, updates: UpdateBotType): Promise<Bot | null> {
-    const botIndex = this.bots.findIndex((bot) => bot.id === id);
-    if (botIndex === -1) return null;
-
-    this.bots[botIndex] = { ...this.bots[botIndex], ...updates };
-    return this.bots[botIndex];
+    return await this.botRepository.updateBot(id, updates);
   }
 
   async deleteBot(id: string): Promise<boolean> {
-    const botIndex = this.bots.findIndex((bot) => bot.id === id);
-    if (botIndex === -1) return false;
-
-    this.bots.splice(botIndex, 1);
-    return true;
+    return await this.botRepository.deleteBot(id);
   }
 }
