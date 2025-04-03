@@ -10,12 +10,14 @@
     "dev": "nodemon index.ts",
     "typeorm:sync": "ts-node -r tsconfig-paths/register ./modules/database/db.ts",
     "swagger:export": "ts-node scripts/generate-swagger.ts",
-    "test": "jest",
+    "test": "jest --passWithNoTests --runInBand",
     "test:watch": "jest --watch",
-    "test:api": "jest bots.test.ts",
+    "test:api": "jest '**/*.test.ts'",
+    "test:bot-manager": "jest bot-manager.test.ts",
     "test:docker:up": "docker compose -f docker-compose.test.yml up -d",
     "test:docker:down": "docker compose -f docker-compose.test.yml down",
-    "test:integration": "docker compose -f docker-compose.integration.yml up --build --abort-on-container-exit"
+    "test:integration": "docker compose -f docker-compose.integration.yml up --build --abort-on-container-exit",
+    "test:all": "npm run test:integration"
   },
   "author": "",
   "license": "ISC",
