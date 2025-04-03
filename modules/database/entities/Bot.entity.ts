@@ -14,6 +14,9 @@ export class Bot {
   @Column({ type: "varchar", length: 255 })
   name: string;
 
+  @Column({ type: "varchar", length: 255 })
+  type: string;
+
   @Column({
     type: "enum",
     enum: ["active", "stopped", "paused"],
