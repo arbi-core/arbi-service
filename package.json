@@ -2,8 +2,11 @@
   "name": "arbi-service",
   "version": "1.0.0",
   "main": "index.js",
+  "engines": {
+    "node": "22.14.0"
+  },
   "scripts": {
-    "start": "node index.ts",
+    "start": "ts-node -r tsconfig-paths/register index.ts",
     "dev": "nodemon index.ts",
     "typeorm:sync": "ts-node -r tsconfig-paths/register ./modules/database/db.ts"
   },
