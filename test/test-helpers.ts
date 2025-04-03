@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { buildApp } from '../app';
+import { buildTestAppWithoutWebsocket } from './mock-app';
 import { testConfig } from './config';
 import { testDataSource } from './db';
 import { Bot } from '../modules/database/entities/Bot.entity';
@@ -7,7 +8,14 @@ import { BotRepository } from '../modules/database/repository/Bot.repository';
 
 // Create and initialize a test app
 export async function createTestApp(): Promise<FastifyInstance> {
-  const app = await buildApp();
+  // In Docker, use the app without WebSocket
+  const isInDocker = process.env.RUNNING_IN_DOCKER === 'true';
+
+  // Choose the appropriate app builder based on environment
+  const app = isInDocker ?
+    await buildTestAppWithoutWebsocket() :
+    await buildApp();
+
   // Listen on a different port
   await app.listen({ port: testConfig.apiPort });
   return app;

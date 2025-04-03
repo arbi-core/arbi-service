@@ -1,12 +1,15 @@
 import { Bot } from "../../database/entities/Bot.entity";
 import { BotRepository } from "../../database/repository/Bot.repository";
+import { WebSocketService } from "../../websocket/websocket.service";
 
 export class BotManagerService {
   private static instance: BotManagerService;
   private botRepository: BotRepository;
+  private wsService: WebSocketService;
 
   private constructor() {
     this.botRepository = new BotRepository();
+    this.wsService = WebSocketService.getInstance();
     console.log("BotManagerService initialized as singleton");
   }
 
@@ -36,13 +39,23 @@ export class BotManagerService {
         throw new Error(`Bot ${botId} is already running`);
       }
 
+      const previousStatus = bot.status;
+
       // Here should be logic for starting a specific bot type
       // Depending on bot.type, different implementations can be launched
 
       // Update bot status in database
-      return await this.botRepository.updateBot(botId, { status: "active" });
+      const updatedBot = await this.botRepository.updateBot(botId, { status: "active" });
+
+      // Notify about status change via WebSocket
+      if (updatedBot) {
+        this.wsService.emitBotStatusChange(updatedBot, previousStatus);
+      }
+
+      return updatedBot;
     } catch (error) {
-      // Just rethrow the error without logging during tests
+      // Notify about error via WebSocket
+      this.wsService.emitBotError(botId, error as Error);
       throw error;
     }
   }
@@ -63,12 +76,22 @@ export class BotManagerService {
         throw new Error(`Bot ${botId} is not running`);
       }
 
+      const previousStatus = bot.status;
+
       // Here should be logic for stopping the bot
 
       // Update bot status in database
-      return await this.botRepository.updateBot(botId, { status: "stopped" });
+      const updatedBot = await this.botRepository.updateBot(botId, { status: "stopped" });
+
+      // Notify about status change via WebSocket
+      if (updatedBot) {
+        this.wsService.emitBotStatusChange(updatedBot, previousStatus);
+      }
+
+      return updatedBot;
     } catch (error) {
-      // Just rethrow the error without logging during tests
+      // Notify about error via WebSocket
+      this.wsService.emitBotError(botId, error as Error);
       throw error;
     }
   }
