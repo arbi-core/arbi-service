@@ -8,12 +8,15 @@
   "scripts": {
     "start": "ts-node -r tsconfig-paths/register index.ts",
     "dev": "nodemon index.ts",
-    "typeorm:sync": "ts-node -r tsconfig-paths/register ./modules/database/db.ts"
+    "typeorm:sync": "ts-node -r tsconfig-paths/register ./modules/database/db.ts",
+    "swagger:export": "ts-node scripts/generate-swagger.ts"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@fastify/swagger": "^9.4.2",
+    "@fastify/swagger-ui": "^5.2.2",
     "@fastify/type-provider-json-schema-to-ts": "^5.0.0",
     "@nestjs/typeorm": "^11.0.0",
     "fastify": "^5.2.1",
