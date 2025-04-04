@@ -22,6 +22,10 @@ export class BotRepository {
     return await this.repository.findOne({ where: { id } });
   }
 
+  async findBotsByStatus(status: 'active' | 'stopped' | 'paused'): Promise<Bot[]> {
+    return await this.repository.find({ where: { status } });
+  }
+
   async updateBot(id: string, data: Partial<Bot>): Promise<Bot | null> {
     const bot = await this.getBotById(id);
     if (!bot) return null;
@@ -33,5 +37,9 @@ export class BotRepository {
   async deleteBot(id: string): Promise<boolean> {
     const result = await this.repository.delete(id);
     return result.affected !== 0;
+  }
+
+  async findByStatus(status: 'active' | 'stopped' | 'paused'): Promise<Bot[]> {
+    return await this.repository.find({ where: { status } });
   }
 }

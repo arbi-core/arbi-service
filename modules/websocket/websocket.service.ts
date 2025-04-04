@@ -5,7 +5,8 @@ import { Bot } from '../database/entities/Bot.entity';
 export enum BotEventType {
   STATUS_CHANGED = 'bot_status_changed',
   CONFIG_UPDATED = 'bot_config_updated',
-  ERROR = 'bot_error'
+  ERROR = 'bot_error',
+  EXECUTION = 'bot_execution'
 }
 
 // Define event payload interface
@@ -83,6 +84,26 @@ export class WebSocketService {
     };
 
     this.eventEmitter.emit(BotEventType.STATUS_CHANGED, event);
+    this.broadcastEvent(event);
+  }
+
+  /**
+   * Emit a bot execution event
+   * @param botId Bot ID
+   * @param executionResult Result of the bot execution
+   */
+  emitBotExecution(botId: string, executionResult: any): void {
+    const event: BotEvent = {
+      type: BotEventType.EXECUTION,
+      botId,
+      data: {
+        result: executionResult,
+        timestamp: new Date().toISOString()
+      },
+      timestamp: Date.now()
+    };
+
+    this.eventEmitter.emit(BotEventType.EXECUTION, event);
     this.broadcastEvent(event);
   }
 
