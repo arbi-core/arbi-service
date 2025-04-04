@@ -97,11 +97,19 @@ export class BotManagerService {
         return;
       }
 
+      // Make sure the bot is fully loaded with the latest data
+      const fullBot = await this.botRepository.getBotById(bot.id);
+
+      if (!fullBot) {
+        throw new Error(`Bot with ID ${bot.id} not found`);
+      }
+
       // Create a new worker for the bot
       const workerScriptPath = path.resolve(__dirname, 'worker-loader.js');
       const worker = new Worker(workerScriptPath, {
         workerData: {
-          botId: bot.id,
+          bot: fullBot,  // Pass the full bot object
+          interval: 5000, // 5-second interval between executions
           scriptPath: path.resolve(__dirname, 'bot.worker.ts')
         }
       });
@@ -115,7 +123,7 @@ export class BotManagerService {
           this.wsService.emitBotExecution(bot.id, message.data);
         } else if (message.type === 'error') {
           // Handle bot execution error
-          console.error(`Bot ${message.botId} execution error:`, message.error);
+          console.error(`Bot ${message.botId || bot.id} execution error:`, message.error);
           this.wsService.emitBotError(bot.id, new Error(message.error));
         } else if (message.type === 'stopped') {
           // Handle bot stopped notification
@@ -256,7 +264,6 @@ export class BotManagerService {
         botId: bot.id,
         status: bot.status,
         details: {
-          ...bot.config,
           isWorkerRunning
         }
       };

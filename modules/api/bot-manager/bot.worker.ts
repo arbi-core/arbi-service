@@ -7,6 +7,18 @@ const bot: Bot = workerData.bot;
 // Interval in milliseconds (5 seconds)
 const interval: number = workerData.interval || 5000;
 
+// Validate that bot exists and has required properties
+if (!bot || !bot.id) {
+  console.error("Error: Invalid bot data provided to worker");
+  if (parentPort) {
+    parentPort.postMessage({
+      type: "error",
+      error: "Invalid bot data provided to worker"
+    });
+  }
+  process.exit(1);
+}
+
 // Flag to track if the worker should continue running
 let running = true;
 
@@ -15,7 +27,7 @@ async function executeBot() {
   try {
     if (!running) return;
 
-    // Get the appropriate strategy for this bot type
+    // Get the appropriate strategy for this bot
     const strategy = BotStrategyFactory.getStrategy(bot);
 
     // Execute the bot's logic
@@ -29,7 +41,7 @@ async function executeBot() {
         data: result
       });
     }
-  } catch (error) {
+  } catch (error: any) {
     // Send any errors back to the parent thread
     if (parentPort) {
       parentPort.postMessage({
@@ -62,5 +74,5 @@ if (parentPort) {
 }
 
 // Initial execution
-console.log(`Starting worker for bot ${bot.id} of type ${bot.type}`);
+console.log(`Starting worker for bot ${bot.id}`);
 executeBot();

@@ -1,4 +1,10 @@
 import { FromSchema } from "json-schema-to-ts";
+import { Exchange, Token, Network } from "../../database/entities/Bot.entity";
+
+// Helper function to get enum values as array of strings
+function getEnumValues<T extends object>(enumObj: T): string[] {
+  return Object.values(enumObj).filter(value => typeof value === 'string') as string[];
+}
 
 // Bot response schema for Swagger
 export const BotResponseSchema = {
@@ -6,11 +12,35 @@ export const BotResponseSchema = {
   properties: {
     id: { type: "string", format: "uuid", description: "Unique identifier of the bot" },
     name: { type: "string", description: "Name of the bot" },
-    type: { type: "string", description: "Type of the bot" },
     status: {
       type: "string",
       enum: ["active", "stopped", "paused"],
       description: "Current status of the bot"
+    },
+    exchange1: {
+      type: "string",
+      enum: getEnumValues(Exchange),
+      description: "First exchange"
+    },
+    exchange2: {
+      type: "string",
+      enum: getEnumValues(Exchange),
+      description: "Second exchange"
+    },
+    token1: {
+      type: "string",
+      enum: getEnumValues(Token),
+      description: "First token"
+    },
+    token2: {
+      type: "string",
+      enum: getEnumValues(Token),
+      description: "Second token"
+    },
+    network: {
+      type: "string",
+      enum: getEnumValues(Network),
+      description: "Network"
     },
     config: {
       type: "object",
@@ -43,7 +73,7 @@ export const ErrorResponseSchema = {
 export const CreateBotSchema = {
   body: {
     type: "object",
-    required: ["name", "type"],
+    required: ["name"],
     properties: {
       name: {
         type: "string",
@@ -51,12 +81,31 @@ export const CreateBotSchema = {
         maxLength: 255,
         description: "Name of the bot"
       },
-      type: {
+      exchange1: {
         type: "string",
-        minLength: 1,
-        maxLength: 255,
-        description: "Type of the bot"
+        enum: getEnumValues(Exchange),
+        description: "First exchange"
       },
+      exchange2: {
+        type: "string",
+        enum: getEnumValues(Exchange),
+        description: "Second exchange"
+      },
+      token1: {
+        type: "string",
+        enum: getEnumValues(Token),
+        description: "First token"
+      },
+      token2: {
+        type: "string",
+        enum: getEnumValues(Token),
+        description: "Second token"
+      },
+      network: {
+        type: "string",
+        enum: getEnumValues(Network),
+        description: "Network"
+      }
     },
     additionalProperties: false,
   },
@@ -66,7 +115,7 @@ export const CreateBotSchema = {
   },
   tags: ['Bots'],
   description: 'Create a new bot',
-  summary: 'Creates a new bot with the given name and type'
+  summary: 'Creates a new bot with the given name'
 } as const;
 
 export type CreateBotType = FromSchema<typeof CreateBotSchema.body>;
@@ -81,12 +130,31 @@ export const UpdateBotSchema = {
         maxLength: 255,
         description: "Name of the bot"
       },
-      type: {
+      exchange1: {
         type: "string",
-        minLength: 1,
-        maxLength: 255,
-        description: "Type of the bot"
+        enum: getEnumValues(Exchange),
+        description: "First exchange"
       },
+      exchange2: {
+        type: "string",
+        enum: getEnumValues(Exchange),
+        description: "Second exchange"
+      },
+      token1: {
+        type: "string",
+        enum: getEnumValues(Token),
+        description: "First token"
+      },
+      token2: {
+        type: "string",
+        enum: getEnumValues(Token),
+        description: "Second token"
+      },
+      network: {
+        type: "string",
+        enum: getEnumValues(Network),
+        description: "Network"
+      }
     },
     additionalProperties: false,
   },

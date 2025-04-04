@@ -78,7 +78,6 @@ export class WebSocketService {
         previousStatus,
         currentStatus: bot.status,
         name: bot.name,
-        type: bot.type
       },
       timestamp: Date.now()
     };

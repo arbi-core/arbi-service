@@ -17,7 +17,7 @@ describe('Bot API Tests', () => {
   beforeEach(async () => {
     // Clean up and create a fresh test bot for each test
     await cleanTestBots();
-    testBot = await createTestBot({ name: 'Test Bot', type: 'unit-test' });
+    testBot = await createTestBot({ name: 'Test Bot' });
   });
 
   afterAll(async () => {
@@ -30,7 +30,7 @@ describe('Bot API Tests', () => {
   describe('GET /api/bots', () => {
     it('should return all bots', async () => {
       // Create another bot to test multiple items
-      await createTestBot({ name: 'Another Bot', type: 'unit-test' });
+      await createTestBot({ name: 'Another Bot' });
 
       const response = await request.get('/api/bots');
 
@@ -39,7 +39,6 @@ describe('Bot API Tests', () => {
       expect(response.body.length).toBe(2);
       expect(response.body[0]).toHaveProperty('id');
       expect(response.body[0]).toHaveProperty('name');
-      expect(response.body[0]).toHaveProperty('type');
     });
   });
 
@@ -50,7 +49,6 @@ describe('Bot API Tests', () => {
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('id', testBot.id);
       expect(response.body).toHaveProperty('name', testBot.name);
-      expect(response.body).toHaveProperty('type', testBot.type);
     });
 
     it('should return 404 for non-existent bot ID', async () => {
@@ -65,8 +63,7 @@ describe('Bot API Tests', () => {
   describe('POST /api/bots', () => {
     it('should create a new bot', async () => {
       const newBot = {
-        name: 'New Bot',
-        type: 'test-creation'
+        name: 'New Bot'
       };
 
       const response = await request
@@ -77,14 +74,12 @@ describe('Bot API Tests', () => {
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('id');
       expect(response.body).toHaveProperty('name', newBot.name);
-      expect(response.body).toHaveProperty('type', newBot.type);
       expect(response.body).toHaveProperty('status', 'stopped');
     });
 
     it('should return 400 for invalid bot data', async () => {
       const invalidBot = {
         // Missing required 'name' field
-        type: 'test-validation'
       };
 
       const response = await request
@@ -99,8 +94,7 @@ describe('Bot API Tests', () => {
   describe('PUT /api/bots/:id', () => {
     it('should update an existing bot', async () => {
       const updates = {
-        name: 'Updated Bot Name',
-        type: 'updated-type'
+        name: 'Updated Bot Name'
       };
 
       const response = await request
@@ -111,7 +105,6 @@ describe('Bot API Tests', () => {
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('id', testBot.id);
       expect(response.body).toHaveProperty('name', updates.name);
-      expect(response.body).toHaveProperty('type', updates.type);
     });
 
     it('should return 404 for updating non-existent bot', async () => {

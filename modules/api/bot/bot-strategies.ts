@@ -1,4 +1,4 @@
-import { Bot } from "../../database/entities/Bot.entity";
+import { Bot, Exchange } from "../../database/entities/Bot.entity";
 
 // Interface for all bot strategies
 export interface BotStrategy {
@@ -23,16 +23,19 @@ export class TradingBotStrategy implements BotStrategy {
   }
 }
 
-// Factory to get the appropriate strategy based on bot type
+// Factory to get the appropriate strategy based on bot configuration
 export class BotStrategyFactory {
   static getStrategy(bot: Bot): BotStrategy {
-    switch (bot.type) {
-      case "monitoring":
-        return new MonitoringBotStrategy();
-      case "trading":
-        return new TradingBotStrategy();
-      default:
-        throw new Error(`Unknown bot type: ${bot.type}`);
+    // Strategy based on exchange or from configuration
+    if (bot.exchange1 === Exchange.UNISWAP2) {
+      return new TradingBotStrategy();
+    } else if (bot.exchange1 === Exchange.SUSHISWAP) {
+      return new TradingBotStrategy();
+    } else if (bot.exchange1 === Exchange.PANCAKE) {
+      return new TradingBotStrategy();
+    } else {
+      // Default to monitoring strategy if no exchange specified
+      return new MonitoringBotStrategy();
     }
   }
 }

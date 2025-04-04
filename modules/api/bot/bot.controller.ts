@@ -54,12 +54,21 @@ export class BotController {
   }
 
   async createBot(
-    request: FastifyRequest<{ Body: { name: string; type: string } }>,
+    request: FastifyRequest<{
+      Body: {
+        name: string;
+        exchange1?: string;
+        exchange2?: string;
+        token1?: string;
+        token2?: string;
+        network?: string;
+      }
+    }>,
     reply: FastifyReply,
   ) {
     try {
-      const { name, type } = request.body;
-      const bot = await this.service.createBot({ name, type });
+      const { name, exchange1, exchange2, token1, token2, network } = request.body;
+      const bot = await this.service.createBot({ name, exchange1, exchange2, token1, token2, network });
       reply.code(201).send(bot);
     } catch (error) {
       reply.code(400).send({ message: "Failed to create bot" });
@@ -96,7 +105,14 @@ export class BotController {
   async updateBot(
     request: FastifyRequest<{
       Params: { id: string };
-      Body: { name?: string; type?: string };
+      Body: {
+        name?: string;
+        exchange1?: string;
+        exchange2?: string;
+        token1?: string;
+        token2?: string;
+        network?: string;
+      };
     }>,
     reply: FastifyReply,
   ) {

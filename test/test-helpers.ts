@@ -33,9 +33,7 @@ export async function createTestBot(data: Partial<Bot> = {}): Promise<Bot> {
   const botRepository = new BotRepository();
   return await botRepository.createBot({
     name: `Test Bot ${Date.now()}`,
-    type: 'test',
     status: 'stopped',
-    config: {},
     ...data
   });
 }
