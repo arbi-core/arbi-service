@@ -1,3 +1,6 @@
+// Load environment variables from .env file
+import 'dotenv/config';
+
 import { buildApp } from "./app";
 import { BotManagerService } from "./modules/api/bot-manager/bot-manager.service";
 

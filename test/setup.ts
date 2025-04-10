@@ -1,3 +1,5 @@
+// Load environment variables from .env files for testing
+import 'dotenv/config';
 import { setupTestDatabase } from './db';
 
 // Run before each test file

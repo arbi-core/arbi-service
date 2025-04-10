@@ -1,6 +1,5 @@
 import { Worker } from "worker_threads";
-import { resolve } from "path";
-import { Bot } from "../../database/entities/Bot.entity";
+import { Bot, Network } from "../../database/entities/Bot.entity";
 import { BotRepository } from "../../database/repository/Bot.repository";
 import { WebSocketService } from "../../websocket/websocket.service";
 import path from 'path';
@@ -9,7 +8,6 @@ export class BotManagerService {
   private static instance: BotManagerService;
   private botRepository: BotRepository;
   private wsService: WebSocketService;
-  // Map to store active workers by bot ID
   private activeWorkers: Map<string, Worker>;
 
   private constructor() {
@@ -19,9 +17,7 @@ export class BotManagerService {
     console.log("BotManagerService initialized as singleton");
   }
 
-  /**
-   * Get BotManagerService instance (Singleton pattern implementation)
-   */
+
   public static getInstance(): BotManagerService {
     if (!BotManagerService.instance) {
       BotManagerService.instance = new BotManagerService();
@@ -29,18 +25,13 @@ export class BotManagerService {
     return BotManagerService.instance;
   }
 
-  /**
-   * Initialize service - should be called on application startup
-   * Restarts bots that were active before shutdown
-   */
   async initialize(): Promise<void> {
     try {
-      // Find all bots with "active" status
+
       const activeBots = await this.botRepository.findBotsByStatus("active");
 
       console.log(`Found ${activeBots.length} active bots to restart`);
 
-      // Start each active bot
       for (const bot of activeBots) {
         await this.startBotWorker(bot);
       }
@@ -49,12 +40,9 @@ export class BotManagerService {
     }
   }
 
-  /**
-   * Start a bot by its ID
-   */
   async startBot(botId: string): Promise<Bot | null> {
     try {
-      // Get bot information from database
+
       const bot = await this.botRepository.getBotById(botId);
 
       if (!bot) {
@@ -67,50 +55,61 @@ export class BotManagerService {
 
       const previousStatus = bot.status;
 
-      // Start bot worker
       await this.startBotWorker(bot);
 
-      // Update bot status in database
       const updatedBot = await this.botRepository.updateBot(botId, { status: "active" });
 
-      // Notify about status change via WebSocket
       if (updatedBot) {
         this.wsService.emitBotStatusChange(updatedBot, previousStatus);
       }
 
       return updatedBot;
     } catch (error) {
-      // Notify about error via WebSocket
+
       this.wsService.emitBotError(botId, error as Error);
       throw error;
     }
   }
 
-  /**
-   * Start a bot worker
-   */
   private async startBotWorker(bot: Bot): Promise<void> {
     try {
-      // Check if a worker already exists for this bot
       if (this.activeWorkers.has(bot.id)) {
         console.log(`Worker for bot ${bot.id} already exists`);
         return;
       }
 
-      // Make sure the bot is fully loaded with the latest data
       const fullBot = await this.botRepository.getBotById(bot.id);
 
       if (!fullBot) {
         throw new Error(`Bot with ID ${bot.id} not found`);
       }
 
-      // Create a new worker for the bot
+      const alchemyApiKeys: Record<string, string> = {
+        mainnet: process.env.ALCHEMY_API_KEY_MAINNET || '',
+        [Network.ARB]: process.env.ALCHEMY_API_KEY_ARBITRUM || '',
+        [Network.BASE]: process.env.ALCHEMY_API_KEY_BASE || '',
+        [Network.POL]: process.env.ALCHEMY_API_KEY_POLYGON || ''
+      };
+
+      const arbitrageAbi = 'arbitrageAbi'
+
+      const arbitrageConfig = {
+        minProfitPercentage: "0.5",
+        tradeAmount: "1000000000000000000",
+        gasLimitMultiplier: '1.5',
+        maxGasPrice: "100000000000",
+        arbitrageContractAddress: process.env.ARBITRAGE_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000",
+        arbitrageContractAbi: arbitrageAbi,
+        privateKey: process.env.PRIVATE_KEY || ""
+      };
+
       const workerScriptPath = path.resolve(__dirname, 'worker-loader.js');
       const worker = new Worker(workerScriptPath, {
         workerData: {
-          bot: fullBot,  // Pass the full bot object
-          interval: 5000, // 5-second interval between executions
-          scriptPath: path.resolve(__dirname, 'bot.worker.ts')
+          bot: fullBot,
+          scriptPath: path.resolve(__dirname, 'bot.worker.ts'),
+          alchemyApiKeys,
+          arbitrageConfig
         }
       });
 

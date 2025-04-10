@@ -1,4 +1,6 @@
 import { execSync } from 'child_process';
+// Load environment variables at the beginning
+import 'dotenv/config';
 
 export default async function () {
   console.log('🚀 Setting up test environment...');
