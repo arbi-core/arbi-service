@@ -1,5 +1,14 @@
 const { workerData, parentPort } = require('worker_threads');
-// Load environment variables from .env file
 require('dotenv').config();
 require('ts-node').register();
-require(workerData.scriptPath);
+
+const workerModule = require(workerData.scriptPath);
+workerModule.startWorker().catch(error => {
+  console.error(`Worker initialization error:`, error);
+  if (parentPort) {
+    parentPort.postMessage({
+      type: "error",
+      error: error.message
+    });
+  }
+});

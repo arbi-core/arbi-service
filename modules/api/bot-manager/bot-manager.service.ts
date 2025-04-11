@@ -9,16 +9,19 @@ export class BotManagerService {
   private botRepository: BotRepository;
   private wsService: WebSocketService;
   private activeWorkers: Map<string, Worker>;
+  public instanceId: string
 
   private constructor() {
     this.botRepository = new BotRepository();
     this.wsService = WebSocketService.getInstance();
+
     this.activeWorkers = new Map<string, Worker>();
-    console.log("BotManagerService initialized as singleton");
+    this.instanceId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   }
 
 
   public static getInstance(): BotManagerService {
+
     if (!BotManagerService.instance) {
       BotManagerService.instance = new BotManagerService();
     }
@@ -27,22 +30,21 @@ export class BotManagerService {
 
   async initialize(): Promise<void> {
     try {
-
       const activeBots = await this.botRepository.findBotsByStatus("active");
 
-      console.log(`Found ${activeBots.length} active bots to restart`);
+      console.log(`[BOT MANAGER SERVICE] Found ${activeBots.length} active bots to restart`);
 
       for (const bot of activeBots) {
         await this.startBotWorker(bot);
       }
     } catch (error) {
-      console.error("Error initializing BotManagerService:", error);
+      console.error("[BOT MANAGER SERVICE] Error initializing BotManagerService:", error);
     }
   }
 
   async startBot(botId: string): Promise<Bot | null> {
     try {
-
+      console.log(`[BOT MANAGER SERVICE] startBot`, botId);
       const bot = await this.botRepository.getBotById(botId);
 
       if (!bot) {
@@ -55,26 +57,31 @@ export class BotManagerService {
 
       const previousStatus = bot.status;
 
-      await this.startBotWorker(bot);
-
+      // First update bot status in database
       const updatedBot = await this.botRepository.updateBot(botId, { status: "active" });
 
-      if (updatedBot) {
-        this.wsService.emitBotStatusChange(updatedBot, previousStatus);
+      if (!updatedBot) {
+        throw new Error(`Failed to update bot ${botId} status`);
       }
+
+      // Then start the worker with the updated bot data
+      await this.startBotWorker(updatedBot);
+
+      // Notify about status change via WebSocket
+      this.wsService.emitBotStatusChange(updatedBot, previousStatus);
 
       return updatedBot;
     } catch (error) {
-
       this.wsService.emitBotError(botId, error as Error);
       throw error;
     }
   }
 
   private async startBotWorker(bot: Bot): Promise<void> {
+    console.log(`[BOT MANAGER SERVICE] Starting worker for bot ${bot.id.slice(-5)}`);
     try {
       if (this.activeWorkers.has(bot.id)) {
-        console.log(`Worker for bot ${bot.id} already exists`);
+        console.log(`[BOT MANAGER SERVICE]Worker for bot ${bot.id} already exists`);
         return;
       }
 
@@ -103,51 +110,47 @@ export class BotManagerService {
         privateKey: process.env.PRIVATE_KEY || ""
       };
 
+
+
       const workerScriptPath = path.resolve(__dirname, 'worker-loader.js');
+      const workerId = `${bot.id}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
       const worker = new Worker(workerScriptPath, {
         workerData: {
           bot: fullBot,
+          workerId: workerId,
           scriptPath: path.resolve(__dirname, 'bot.worker.ts'),
           alchemyApiKeys,
           arbitrageConfig
         }
       });
 
-      // Handle messages from the worker
       worker.on('message', (message) => {
         if (message.type === 'result') {
-          // Handle bot execution result
-          console.log(`Bot ${message.botId} execution result:`, message.data);
-          // Could emit WebSocket event with result
+          console.log(`[BOT MANAGER SERVICE] worker.on message RESULT bot id ${message.botId.slice(-5)} execution result:`, message.data);
           this.wsService.emitBotExecution(bot.id, message.data);
         } else if (message.type === 'error') {
-          // Handle bot execution error
-          console.error(`Bot ${message.botId || bot.id} execution error:`, message.error);
+          console.error(`[BOT MANAGER SERVICE] worker.on message ERROR bot id ${message.botId || bot.id} execution error:`, message.error);
           this.wsService.emitBotError(bot.id, new Error(message.error));
         } else if (message.type === 'stopped') {
-          // Handle bot stopped notification
-          console.log(`Bot ${message.botId} has been stopped`);
+          console.log(`[BOT MANAGER SERVICE] worker.on message STOPPED bot id ${message.botId} has been stopped`);
         }
       });
 
-      // Handle worker errors
       worker.on('error', (error) => {
-        console.error(`Worker for bot ${bot.id} encountered an error:`, error);
+        console.error(`[BOT MANAGER SERVICE] Worker for bot ${bot.id} encountered an error:`, error);
         this.wsService.emitBotError(bot.id, error);
         this.activeWorkers.delete(bot.id);
       });
 
-      // Handle worker exit
       worker.on('exit', (code) => {
-        console.log(`Worker for bot ${bot.id} exited with code ${code}`);
+        console.log(`[BOT MANAGER SERVICE] Worker for bot ${bot.id} exited with code ${code}`);
         this.activeWorkers.delete(bot.id);
       });
 
-      // Store the worker in our map
       this.activeWorkers.set(bot.id, worker);
-      console.log(`Started worker for bot ${bot.id}`);
+      console.log(`[BOT MANAGER SERVICE] Started worker for bot  ${bot.id.slice(-5)}`);
     } catch (error) {
-      console.error(`Failed to start worker for bot ${bot.id}:`, error);
+      console.error(`[BOT MANAGER SERVICE] Failed to start worker for bot ${bot.id}:`, error);
       throw error;
     }
   }
@@ -196,40 +199,71 @@ export class BotManagerService {
     try {
       const worker = this.activeWorkers.get(botId);
       if (!worker) {
-        console.log(`No active worker found for bot ${botId}`);
+        console.log(`[BOT MANAGER SERVICE] No active worker found for bot ${botId}`);
         return;
       }
+
+      console.log(`[BOT MANAGER SERVICE] Attempting to stop worker for bot ${botId}`);
+
+      // Create a cleanup function to remove listeners and references
+      const cleanup = () => {
+        // Remove the worker from our map
+        this.activeWorkers.delete(botId);
+        console.log(`[BOT MANAGER SERVICE] Stopped worker for bot ${botId}`);
+      };
 
       // Send stop command to worker
       worker.postMessage({ command: 'stop' });
 
-      // Wait for worker to gracefully stop (with timeout)
-      const timeout = new Promise<void>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error(`Timed out waiting for bot ${botId} to stop`));
-        }, 5000); // 5 second timeout
-      });
+      // Use a Promise with timeout for stopping the worker
+      try {
+        // Wait for worker to gracefully stop (with timeout)
+        await Promise.race([
+          // Promise that resolves when worker sends 'stopped' message
+          new Promise<void>((resolve, reject) => {
+            // Create a message handler
+            const messageHandler = (message: any) => {
+              // Only handle messages for this specific bot
+              if (message.botId === botId && message.type === 'stopped') {
+                console.log(`[BOT MANAGER SERVICE] Received stopped message from bot ${botId}`);
+                // Clean up the listener
+                worker.removeListener('message', messageHandler);
+                resolve();
+              }
+            };
 
-      const workerStopped = new Promise<void>((resolve) => {
-        worker.once('message', (message) => {
-          if (message.type === 'stopped') {
-            resolve();
-          }
-        });
-      });
+            // Add the message handler
+            worker.on('message', messageHandler);
 
-      // Wait for either successful stop or timeout
-      await Promise.race([workerStopped, timeout])
-        .catch(async (error) => {
-          console.error(`Error stopping bot ${botId}:`, error);
-          // Terminate the worker forcefully if it doesn't stop gracefully
+            // Also listen for exit event
+            const exitHandler = (code: number) => {
+              console.log(`[BOT MANAGER SERVICE] Worker for bot ${botId} exited with code ${code}`);
+              worker.removeListener('message', messageHandler);
+              worker.removeListener('exit', exitHandler);
+              resolve();
+            };
+            worker.on('exit', exitHandler);
+
+            // Set timeout
+            setTimeout(() => {
+              worker.removeListener('message', messageHandler);
+              worker.removeListener('exit', exitHandler);
+              reject(new Error(`Timed out waiting for bot ${botId} to stop`));
+            }, 5000); // 5 second timeout
+          })
+        ]);
+      } catch (error) {
+        console.error(`Error stopping bot ${botId}:`, error);
+        // Terminate the worker forcefully if it doesn't stop gracefully
+        try {
           await worker.terminate();
-        })
-        .finally(() => {
-          // Remove the worker from our map
-          this.activeWorkers.delete(botId);
-          console.log(`Stopped worker for bot ${botId}`);
-        });
+          console.log(`[BOT MANAGER SERVICE] Forcefully terminated worker for bot ${botId}`);
+        } catch (terminateError) {
+          console.error(`Failed to terminate worker for bot ${botId}:`, terminateError);
+        }
+      } finally {
+        cleanup();
+      }
     } catch (error) {
       console.error(`Failed to stop worker for bot ${botId}:`, error);
       throw error;

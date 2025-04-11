@@ -10,7 +10,6 @@ export class BotService {
   }
 
   async createBot(data: CreateBotType): Promise<Bot> {
-    console.log('data 11', data);
     const botData: Partial<Bot> = {
       name: data.name,
       status: "stopped",

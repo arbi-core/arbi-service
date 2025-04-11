@@ -12,7 +12,7 @@ async function main() {
   // Initialize the BotManagerService to restart any active bots
   const botManagerService = BotManagerService.getInstance();
   await botManagerService.initialize();
-  console.log("BotManagerService initialized");
+
 }
 
 main().catch((err) => {

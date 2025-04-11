@@ -156,12 +156,12 @@ export class BotManagerController {
     reply: FastifyReply
   ) {
     try {
+      console.log(`[BotManagerController] Start Bot`);
       const { id } = request.params;
       const bot = await this.service.startBot(id);
       reply.code(200).send(bot);
     } catch (error) {
       const err = error as Error;
-      // Handle different types of errors
       if (err.message.includes('not found')) {
         reply.code(404).send({ message: err.message });
       } else if (err.message.includes('already running')) {
@@ -177,6 +177,7 @@ export class BotManagerController {
     reply: FastifyReply
   ) {
     try {
+      console.log(`[BotManagerController] Stop Bot`);
       const { id } = request.params;
       const bot = await this.service.stopBot(id);
       reply.code(200).send(bot);
@@ -210,4 +211,4 @@ export class BotManagerController {
       }
     }
   }
-} 
+}

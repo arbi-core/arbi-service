@@ -24,15 +24,15 @@ export class WorkerBlockchainProvider {
 
     this.network = ethNetwork;
     this.provider = new ethers.AlchemyProvider(ethNetwork, apiKey);
-    console.log(`[WorkerBlockchainProvider] Initialized for network: ${ethNetwork}`);
+    console.log(`[WORKER BLOCKCHAIN PROVIDER] Initialized for network: ${ethNetwork}`);
   }
 
   public subscribeToNewBlocks(callback: (blockNumber: number) => void): void {
     this.cleanup();
-    console.log(`[WorkerBlockchainProvider] Subscribing to new blocks for network: ${this.network}`)
+    console.log(`[WORKER BLOCKCHAIN PROVIDER] Subscribing to new blocks for network: ${this.network}`)
 
     const blockListener = (blockNumber: number) => {
-      console.log(`[WorkerBlockchainProvider] New block detected: ${blockNumber} on ${this.network}`);
+      console.log(`[WORKER BLOCKCHAIN PROVIDER] New block detected: ${blockNumber} on ${this.network}`);
       callback(blockNumber);
     };
 
@@ -58,11 +58,11 @@ export class WorkerBlockchainProvider {
 
 
   public cleanup(): void {
-    console.log(`[WorkerBlockchainProvider] Cleaning up`);
+    console.log(`[WORKER BLOCKCHAIN PROVIDER] Cleaning up`);
     if (this.unsubscribeFunction) {
       this.unsubscribeFunction();
       this.unsubscribeFunction = null;
-      console.log(`[WorkerBlockchainProvider] Unsubscribed from block events for network: ${this.network}`);
+      console.log(`[WORKER BLOCKCHAIN PROVIDER] Unsubscribed from block events for network: ${this.network}`);
     }
   }
 }
