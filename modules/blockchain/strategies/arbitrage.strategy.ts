@@ -24,7 +24,6 @@ export class ArbitrageStrategy implements BotStrategy {
   private dex2: DexProvider | null = null;
   private unsubscribeBlockEvents: (() => void) | null = null;
   private isRunning: boolean = false;
-  private errorCount: number = 0;
 
   constructor(
     workerBlockchainProvider: WorkerBlockchainProvider,
@@ -123,7 +122,6 @@ export class ArbitrageStrategy implements BotStrategy {
       this.unsubscribeBlockEvents();
       this.unsubscribeBlockEvents = null;
     }
-    this.errorCount = 0;
     this.isRunning = false;
 
     console.log(`[ARBITRAGE STRATEGY] Strategy stopped for ${this.bot.name}`);
@@ -184,6 +182,10 @@ export class ArbitrageStrategy implements BotStrategy {
       console.log(`[ARBITRAGE STRATEGY ${blockNumber}] Difference: ${priceDifference.toFixed(6)} (${percentage.toFixed(2)}%)`);
 
       if (percentage >= this.config.minProfitPercentage) {
+
+
+        
+
         console.log(`[ARBITRAGE STRATEGY ${blockNumber}] !!! Profitable arbitrage opportunity found for ${this.bot.name} !!!`);
       }
     } catch (error) {
@@ -202,7 +204,6 @@ export class ArbitrageStrategy implements BotStrategy {
     this.dex1 = null;
     this.dex2 = null;
     this.unsubscribeBlockEvents = null;
-    this.errorCount = 0;
 
     console.log(`Cleanup complete for ${this.bot.name}`);
   }

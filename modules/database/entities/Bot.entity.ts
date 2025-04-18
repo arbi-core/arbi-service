@@ -16,7 +16,9 @@ export enum Exchange {
 export enum Token {
   USDT = "usdt",
   USDC = "usdc",
-  ETH = "eth"
+  ETH = "eth",
+  LDO = "ldo",
+  AETX = "aetx"
 }
 
 export enum Network {
